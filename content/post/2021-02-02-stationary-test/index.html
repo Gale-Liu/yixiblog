@@ -1,0 +1,143 @@
+---
+title: stationary test
+author: gale
+date: '2021-02-02'
+slug: []
+categories:
+  - R
+tags:
+  - test
+lastmod: '2021-02-02T21:36:40+08:00'
+keywords: []
+description: ''
+comment: no
+toc: yes
+autoCollapseToc: no
+postMetaInFooter: no
+hiddenFromHomePage: no
+contentCopyright: no
+reward: no
+mathjax: yes
+mathjaxEnableSingleDollar: yes
+mathjaxEnableAutoNumber: yes
+hideHeaderAndFooter: no
+flowchartDiagrams:
+  enable: no
+  options: ''
+sequenceDiagrams:
+  enable: no
+  options: ''
+output:
+  blogdown::html_page:
+    highlight: tango
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  background-color: #f8f8f8; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ef2929; } /* Alert */
+code span.an { color: #8f5902; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #c4a000; } /* Attribute */
+code span.bn { color: #0000cf; } /* BaseN */
+code span.cf { color: #204a87; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4e9a06; } /* Char */
+code span.cn { color: #000000; } /* Constant */
+code span.co { color: #8f5902; font-style: italic; } /* Comment */
+code span.cv { color: #8f5902; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #8f5902; font-weight: bold; font-style: italic; } /* Documentation */
+code span.dt { color: #204a87; } /* DataType */
+code span.dv { color: #0000cf; } /* DecVal */
+code span.er { color: #a40000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #0000cf; } /* Float */
+code span.fu { color: #000000; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #8f5902; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #204a87; font-weight: bold; } /* Keyword */
+code span.op { color: #ce5c00; font-weight: bold; } /* Operator */
+code span.ot { color: #8f5902; } /* Other */
+code span.pp { color: #8f5902; font-style: italic; } /* Preprocessor */
+code span.sc { color: #000000; } /* SpecialChar */
+code span.ss { color: #4e9a06; } /* SpecialString */
+code span.st { color: #4e9a06; } /* String */
+code span.va { color: #000000; } /* Variable */
+code span.vs { color: #4e9a06; } /* VerbatimString */
+code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<div id="TOC">
+
+</div>
+
+<p>记录平稳性检验遇到的问题及解决方法</p>
+<!--more-->
+<p>单位根随机过程
+<span class="math display">\[
+Y_t=\rho Y_{t-1}+u_t, |\rho|\leq 1
+\]</span>
+由于出现单位根会导致t检验存在严重偏误，所以变换方程
+<span class="math display">\[
+\Delta Y_t=\delta Y_{t-1}+u_t
+\]</span>
+用<span class="math inline">\(\tau\)</span>统计量检验<span class="math inline">\(\delta=0\)</span>的原假设，备择假设为<span class="math inline">\(\delta&lt;0\)</span>，即DF检验：
+<span class="math display">\[
+\begin{aligned}
+  \Delta Y_t&amp;=\delta Y_{t-1}+u_t \\
+  \Delta Y_t&amp;=\beta_1+\delta Y_{t-1}+u_t \\
+  \Delta Y_t&amp;=\beta_1+\beta_2t+\delta Y_{t-1}+u_t
+\end{aligned}
+\]</span>
+加入一阶差分的滞后项，改进之后的检验称为ADF检验：
+<span class="math display">\[
+\begin{aligned}
+  \Delta Y_t&amp;=\delta Y_{t-1}+\sum^m_{i=1}\alpha_i\Delta Y_{t-i}+u_t \\
+  \Delta Y_t&amp;=\beta_1+\delta Y_{t-1}+\sum^m_{i=1}\alpha_i\Delta Y_{t-i}+u_t \\
+  \Delta Y_t&amp;=\beta_1+\beta_2t+\delta Y_{t-1}+\sum^m_{i=1}\alpha_i\Delta Y_{t-i}+u_t
+\end{aligned}
+\]</span>
+同样检验<span class="math inline">\(\delta\)</span>是否为0，若<span class="math inline">\(\delta\)</span>为0，则说明单位根随机过程中的<span class="math inline">\(\rho\)</span>为1，方差随时间变大，序列不平稳。</p>
+<p>R语言中一般用<code>tseries::adf.test</code>函数快速判断，但偶尔会出现不符合预期的情况，这是由于该函数只选用了带漂移项和趋势项的ADF检验，没有考虑其他模型形式，此时可以考虑使用<code>urca</code>包中的<code>ur.df</code>函数。（需要先载入<code>urca</code>包才能使用<code>summary</code>函数）</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(urca)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ur.df</span>(data,<span class="at">type =</span> <span class="st">&quot;none&quot;</span>,<span class="at">selectlags =</span> <span class="st">&quot;AIC&quot;</span>) <span class="sc">%&gt;%</span> <span class="fu">summary</span>()</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ur.df</span>(data,<span class="at">type =</span> <span class="st">&quot;drift&quot;</span>,<span class="at">selectlags =</span> <span class="st">&quot;BIC&quot;</span>) <span class="sc">%&gt;%</span> <span class="fu">summary</span>()</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ur.df</span>(data,<span class="at">type =</span> <span class="st">&quot;trend&quot;</span>,<span class="at">lags =</span> <span class="dv">2</span>) <span class="sc">%&gt;%</span> <span class="fu">summary</span>()</span></code></pre></div>
+<p><strong>注意</strong>，此时不能直接看<span class="math inline">\(\delta\)</span>对应的p值，这是由于报告出的p值为t检验的p值，若序列不平稳，则会产生较大偏误，应观察并比较给出的临界值，做出判断。</p>
+<p>此种方式虽然比较全面，但优点同时也是缺点，太过详细的结果不利于直观的信息表达，所以可以选用<code>aTSA::stationary.test</code>函数，既分别展示了三种ADF检验的结果，又简洁明了。</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>aTSA<span class="sc">::</span><span class="fu">stationary.test</span>(data, <span class="at">nlag =</span> <span class="dv">5</span>)</span></code></pre></div>
+<p>当然，我还是喜欢先用<code>tseries::adf.test</code>配合<code>map</code>族函数快速检验，出现和预期结果不符的情况再考虑其他检验函数。</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">map</span>(data, log) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">map</span>(tseries<span class="sc">::</span>adf.test) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">map_dbl</span>(<span class="st">&quot;p.value&quot;</span>)</span></code></pre></div>
+<p><code>map</code>返回列表，<code>map_dbl</code>返回双精度型向量，我简单理解为带小数部分的数。</p>

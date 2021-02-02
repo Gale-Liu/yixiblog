@@ -1,0 +1,222 @@
+---
+title: var model
+author: gale
+date: '2021-02-02'
+slug: []
+categories: []
+tags:
+  - var
+lastmod: '2021-02-02T15:38:49+08:00'
+keywords: []
+description: ''
+comment: no
+toc: yes
+autoCollapseToc: yes
+postMetaInFooter: no
+hiddenFromHomePage: no
+contentCopyright: no
+reward: no
+mathjax: yes
+mathjaxEnableSingleDollar: yes
+mathjaxEnableAutoNumber: yes
+hideHeaderAndFooter: no
+flowchartDiagrams:
+  enable: no
+  options: ''
+sequenceDiagrams:
+  enable: no
+  options: ''
+bibliography: paper.bib
+csl: chinese-gb7714-2005-numeric.csl
+---
+
+介绍一下基本的VAR模型以及R语言实现
+
+<!--more-->
+
+# 基本形式
+
+将一般的AR模型扩展成向量的形式，基本形式如下[@hamilton2015]
+
+$$
+\bf y_t=\bf\Phi_1\bf y_{t-1}+\bf\Phi_2\bf y_{t-2}+\cdots+\bf\Phi_p\bf y_{t-p}+\bf\varepsilon_t
+$$
+
+其中
+
+$$
+\begin{aligned}
+&E(\bf\varepsilon_t)=0 \\
+&E(\bf\varepsilon_t\bf\varepsilon'_\tau)=
+\begin{cases}
+\bf\Omega,t=\tau \\
+0,其他\end{cases}
+\end{aligned}
+$$
+
+模型中还可以加入截距项、趋势项以及其他变量进行扩展，`vars`包中提供`none`，`trend`，`const`，`both`几个基本类型，还可通过`season`和`exogen`参数进行扩展，具体参考`VAR`函数说明。
+
+以两个变量举例
+$$
+\begin{aligned}
+y_{1t}&=\phi^{(1)}_{11}y_{1,t-1}+\phi^{(1)}_{12}y_{2,t-1}+\cdots+\phi^{(p)}_{11}y_{1,t-p}+\phi^{(p)}_{12}y_{2,t-p}+\varepsilon_{1t} \\
+y_{2t}&=\phi^{(1)}_{21}y_{1,t-1}+\phi^{(1)}_{22}y_{2,t-1}+\cdots+\phi^{(p)}_{21}y_{1,t-p}+\phi^{(p)}_{22}y_{2,t-p}+\varepsilon_{2t}
+\end{aligned}
+$$
+
+$$\begin{bmatrix}y_{1t} \\ y_{2t}\end{bmatrix}=\begin{bmatrix}\phi^{(1)}_{11}&\phi^{(1)}_{12} \\ \phi^{(1)}_{21}&\phi^{(1)}_{22}\end{bmatrix}\begin{bmatrix}y_{1,t-1} \\ y_{2,t-1}\end{bmatrix}+\cdots+\begin{bmatrix}\phi^{(p)}_{11}&\phi^{(p)}_{12}\\ \phi^{(p)}_{21}&\phi^{(p)}_{22}\end{bmatrix}\begin{bmatrix}y_{1,t-p}\\ y_{2,t-p}\end{bmatrix}+\begin{bmatrix}\varepsilon_{1t}\\ \varepsilon_{2t}\end{bmatrix}$$
+使用极大似然估计参数矩阵。
+
+```r
+fit.var <- VAR(data, p = 6, type = "none")
+```
+
+`p`表示滞后阶数，`type`表示类型。
+
+# 滞后阶数的选择
+
+`vars`包中的`VARselect`函数提供了四个选择：
+
+$$
+\begin{aligned}
+AIC(p) & = \ln|\hat\Omega(p)|+\frac{2}{T}pn^2 \\
+HQ(p) & = \ln|\hat\Omega(p)|+\frac{2\ln(\ln T)}{T}pn^2 \\
+SC(p) & = \ln|\hat\Omega(p)|+\frac{\ln T}{T}pn^2 \\
+FPE(p) & = \left(\frac{T+q}{T-q}\right)|\hat\Omega(p)|
+\end{aligned}
+$$
+
+其中：
+
+$p$：滞后阶数
+
+$\Omega$：残差的协方差矩阵
+
+$n$：变量个数
+
+$T$：样本量
+
+$q$：每个方程中待估参数的个数
+
+```r
+VARselect(data, type = "none")
+```
+
+函数会返回四个不同信息准则下的最优滞后阶数，一般情况下，多数服从少数，也可根据需要自行判断。
+
+# 平稳性检验
+
+对于一个VAR(p)模型，若满足
+$$
+|\bf I_n\lambda^p-\bf\Phi_1\lambda^{p-1}-\bf\Phi_2\lambda^{p-2}-\cdots-\bf\Phi_p|=0
+$$
+的所有$\lambda$都有$|\lambda|<1$，则说明VAR(p)模型平稳。
+
+```r
+roots(fit.var)
+```
+
+`roots`可提取特征多项式的根，若所有值均小于1，则说明模型平稳。如果建立VAR模型之前所有变量都通过了平稳性检验，则VAR模型一般都平稳。
+
+# 脉冲响应
+
+VAR模型可写成MA($\infty$)形式
+$$
+\bf y_t=\bf\mu+\bf\varepsilon_t+\bf\Psi_1\bf\varepsilon_{t-1}+\bf\Psi_2\bf\varepsilon_{t-2}+\cdots
+$$
+可以理解为之前不同时期的冲击$\bf\varepsilon$对当期$\bf y$有不同程度的影响，影响程度的大小用矩阵$\bf\Psi_s$表示：
+$$
+\frac{\partial\bf{y}_{t+s}}{\partial\bf\varepsilon'_t}=\bf\Psi_s
+$$
+即$\bf\Psi_s$的第$i$行第$j$列元素为在其他变量保持不变的情况下，第$j$个变量在时期$t$的新息$\varepsilon_{jt}$增加一个单位对第$i$个变量在时期$t+s$时的值$y_{i,t+s}$产生的影响，从中也可以看出影响力的强弱只与时间间隔有关，与时间的起始点无关。（这一假设在时变参数VAR模型（TVP-VAR）中被打破）
+
+将$\bf\Psi_s$的第$i$行第$j$列元素
+
+$$
+\frac{\partial y_{i,t+s}}{\partial\varepsilon_{jt}}
+$$
+
+作为间隔时间$s$的函数，此函数称为**脉冲响应函数**(Impulse Response Function)
+
+由于残差的协方差矩阵在大多数情况下不是对角矩阵，所以$\varepsilon_{jt}$变动时，不一定能保证其他变量保持不变，这时需要将冲击正交化。
+
+由正定对称矩阵的三角分解，得
+
+$$
+\boldsymbol{\Omega}=\boldsymbol A\boldsymbol D\boldsymbol A'
+$$
+
+其中，$\bf A$为主对角线元素为1的下三角矩阵，$\bf D$为对角矩阵。
+
+记
+$$
+\boldsymbol u_t\equiv\boldsymbol A^{-1}\boldsymbol\varepsilon_t
+$$
+称$\boldsymbol u_t$为**结构冲击**，可证明
+
+$$
+E(\boldsymbol u_t\boldsymbol u'_t)=\boldsymbol D
+$$
+
+此时，在VAR模型的左右两边同时左乘$\bf A^{-1}$，原模型可改写为：
+
+$$
+\bf A^{-1}\bf y_t=\bf F_1\bf y_{t-1}+\bf F_2\bf y_{t-2}+\cdots+\bf F_p\bf y_{t-p}+\boldsymbol u_t
+$$
+
+将脉冲响应函数改写为$\boldsymbol\Psi_s\boldsymbol a_j$，$\boldsymbol a_j$为$\boldsymbol A$的第$j$列，改写后的函数称为**正交脉冲响应函数**(Orthogonalised Impulse Response Function)
+
+此时虽然使冲击正交化了，但一单位的冲击表现为对应$y$的单位大小，如果两个离散程度不同的$y$相互比较，则会出现方差大的一方实际造成的冲击较小，而方差较小的一方实际造成的冲击较大，为了避免这种问题，继续改进脉冲响应函数：
+
+将$\boldsymbol D$经[Cholesky分解](https://zh.wikipedia.org/wiki/Cholesky%E5%88%86%E8%A7%A3)，得
+$$
+\boldsymbol\Omega=\boldsymbol A\boldsymbol D^{1/2}\boldsymbol D^{1/2}\boldsymbol A'=\boldsymbol P\boldsymbol P'
+$$
+记
+$$\boldsymbol v_t\equiv\boldsymbol P^{-1}\boldsymbol\varepsilon_t=\boldsymbol D^{-1/2}\boldsymbol A^{-1}\boldsymbol\varepsilon_t=\boldsymbol D^{-1/2}\boldsymbol u_t
+$$
+
+则脉冲响应为
+$$\frac{\partial\bf y_{t+s}}{\partial v_{jt}}=\boldsymbol\Psi_s\boldsymbol a_j\sqrt{d_{jj}}=\boldsymbol\Psi_s\boldsymbol p_j
+$$
+这种冲击形式则是对$y$一个标准差的冲击，便于不同离散程度的变量相互比较，实际操作中也是使用此种正交脉冲响应函数。
+
+```r
+irf(fit.var) %>% plot()
+```
+
+虽然Lutkepohl(1993)给出了脉冲响应估计量的清晰表述，但由于其较为复杂，在实践中，通常用自举法(Bootstrap)构造脉冲响应函数的置信区间。关于自举法置信区间的详细定义可见Benkwitz等(2001)及Breitung等(2001)。
+
+# 方差分解
+
+方差分解度量第$j$个变量上的冲击对第$k$个变量的$h$步预测误差方差中的贡献率。
+
+VAR模型在未来$s$期的误差项
+$$
+\bf y_{t+s}-\hat{\bf y}_{t+s|t}=\boldsymbol\varepsilon_{t+s}+\boldsymbol\Psi_1\boldsymbol\varepsilon_{t+s-1}+\boldsymbol\Psi_2\boldsymbol\varepsilon_{t+s-2}+\cdots+\boldsymbol\Psi_{s-1}\boldsymbol\varepsilon_{t+1}
+$$
+则均方误差为
+$$
+\begin{aligned}
+  MSE(\bf{\hat y}_{t+s|t})&=E[(\bf{y}_{t+s}-\bf{\hat y}_{t+s|t})(\bf{y}_{t+s}-\bf{\hat y}_{t+s|t})'] \\
+  &=\boldsymbol\Omega+\boldsymbol\Psi_1\boldsymbol\Omega\boldsymbol\Psi'_1+\boldsymbol\Psi_2\boldsymbol\Omega\boldsymbol\Psi'_2+\cdots+\boldsymbol\Psi_{s-1}\boldsymbol\Omega\boldsymbol\Psi'_{s-1}
+\end{aligned}
+$$
+正交化扰动项$\boldsymbol u_t$对MSE的贡献
+$$
+\begin{aligned}
+\boldsymbol\Omega&=E(\boldsymbol\varepsilon_t\boldsymbol\varepsilon'_t)=\boldsymbol a_1\boldsymbol a'_1Var(u_{1t})+\boldsymbol a_2\boldsymbol a'_2Var(u_{2t})+\cdots+\boldsymbol a_n\boldsymbol a'_nVar(u_{nt})\\
+MSE(\bf{\hat y}_{t+s|t})&=\sum^n_{j=1}\{Var(u_{jt})[\boldsymbol a_j\boldsymbol a'_j+\boldsymbol\Psi_1\boldsymbol a_j\boldsymbol a'_j\boldsymbol\Psi'_1+\cdots+\boldsymbol\Psi_{s-1}\boldsymbol a_j\boldsymbol a'_j\boldsymbol\Psi'_{s-1}]\}
+\end{aligned}
+$$
+Cholesky分解形式的方差贡献率
+$$
+MSE(\boldsymbol{\hat y}_{t+s|t})=\sum^n_{j=1}[\boldsymbol p_j\boldsymbol p'_j+\boldsymbol\Psi_1\boldsymbol p_j\boldsymbol p'_j\boldsymbol\Psi'_1+\cdots+\boldsymbol\Psi_{s-1}\boldsymbol p_j\boldsymbol p'_j\boldsymbol\Psi'_{s-1}]
+$$
+```r
+fevd(fit.var) %>% plot()
+```
+
+# 应用
+
+# 参考资料
