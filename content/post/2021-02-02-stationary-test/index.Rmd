@@ -27,9 +27,6 @@ flowchartDiagrams:
 sequenceDiagrams:
   enable: no
   options: ''
-output:
-  blogdown::html_page:
-    highlight: tango
 ---
 
 记录平稳性检验遇到的问题及解决方法
