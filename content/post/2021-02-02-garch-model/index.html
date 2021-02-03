@@ -3,12 +3,96 @@ title: GARCH model
 author: gale
 date: '2021-02-02'
 slug: []
-categories: []
-tags: []
-meta_img: images/image.png
-description: Description for the page
+categories: 
+    - R
+tags: 
+    - model
+    - GARCH
+bibliography: paper.bib
+csl: chinese-gb7714-2005-numeric.csl
 ---
 
 <script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
 
 
+<p>GARCH族模型介绍</p>
+<!--more-->
+<div id="普通garch模型" class="section level1">
+<h1>普通GARCH模型</h1>
+<p>对于对数收益率序列<span class="math inline">\(r_t\)</span>，令<span class="math inline">\(a_t=r_t-\mu_t\)</span>为<span class="math inline">\(t\)</span>时刻的新息，若<span class="math inline">\(a_t\)</span>满足</p>
+<p><span class="math display">\[
+\begin{aligned}
+  a_t&amp;=\sigma_t\varepsilon_t\\
+  \sigma^2_t&amp;=a_0+\sum^m_{i=1}\alpha_ia^2_{t-i}+\sum^s_{j=1}\beta_j\sigma^2_{t-j}
+\end{aligned}
+\]</span></p>
+<p>且<span class="math inline">\(\varepsilon_t\)</span>均值为0，方差为1，独立同分布，<span class="math inline">\(\alpha_0&gt;0, \alpha_i\geq 0, \beta_i\geq 0, \sum^{\max(m,s)}_{i=1}(\alpha_i+\beta_i)&lt;1\)</span>，则称<span class="math inline">\(a_t\)</span>服从GARCH(m,s)模型</p>
+</div>
+<div id="门限garch模型" class="section level1">
+<h1>门限GARCH模型</h1>
+<p>常用来处理杠杆效应的TGARCH模型</p>
+<p><span class="math display">\[
+\sigma_t^2 = \alpha_0 + \sum_{i=1}^m (\alpha_i + \gamma_i N_{t-i}) a_{t-i}^2+ \sum_{j=1}^s \beta_j \sigma_{t-j}^2
+\]</span></p>
+<p>其中，<span class="math inline">\(\alpha_i,\beta_i,\gamma_i\)</span>非负，当<span class="math inline">\(a_{t-i}\geq 0\)</span>时，<span class="math inline">\(N_{t-1}=0\)</span>，否则为1</p>
+<p>正负不同的<span class="math inline">\(a_{t-i}\)</span>对<span class="math inline">\(\sigma_t^2\)</span>的影响不同，负值影响更大</p>
+</div>
+<div id="arch-lm检验" class="section level1">
+<h1>ARCH-LM检验</h1>
+<p>该检验等价于检验如下线性回归中的F统计量
+<span class="math display">\[a_t^2=\alpha_0+\alpha_1a_{t-1}^2+\cdots+\alpha_ma_{t-m}^2+e_t, t=m+1,\cdots,T\]</span>
+原假设
+<span class="math inline">\(\alpha_1=\alpha_2=\cdots=\alpha_m=0\)</span>，即不存在ARCH效应</p>
+<pre class="r"><code>FinTS::ArchTest(residuals(var1)[,1], lags = 10)</code></pre>
+<pre class="r"><code>arch.test(var2, lags.multi = 10)</code></pre>
+</div>
+<div id="dcc-garch1-1模型" class="section level1">
+<h1>DCC-GARCH(1, 1)模型</h1>
+<p>将GARCH模型用矩阵形式表示
+<span class="math display">\[
+\begin{aligned}
+  \boldsymbol r_t&amp;=\boldsymbol \mu_t+\boldsymbol a_t\\
+  \boldsymbol a_t&amp;=\boldsymbol H_t^{1/2}\boldsymbol z_t
+\end{aligned}
+\]</span>
+其中，
+<span class="math inline">\(\boldsymbol H_t\)</span>可分解为
+<span class="math inline">\(\boldsymbol H_t=\boldsymbol D_t\boldsymbol R_t\boldsymbol D_t\)</span></p>
+<p><span class="math inline">\(\boldsymbol D_t=diag(\sqrt{h_{1t}},\sqrt{h_{2t}},\cdots,\sqrt{h_{nt}})\)</span></p>
+<p><span class="math inline">\(\boldsymbol R_t\)</span>为相关系数矩阵</p>
+<p><span class="math display">\[
+\begin{aligned}
+  \boldsymbol R_t&amp;=\boldsymbol Q^{*-1}_t\boldsymbol Q_t\boldsymbol Q^{*-1}_t\\
+  \boldsymbol Q_t&amp;=(1-a-b)\bar{\boldsymbol Q}+a\boldsymbol \varepsilon_{t-1}\boldsymbol \varepsilon&#39;_{t-1}+b\boldsymbol Q_{t-1}
+\end{aligned}
+\]</span>
+其中，
+<span class="math inline">\(\bar{\boldsymbol Q}=E(\boldsymbol \varepsilon_t\boldsymbol \varepsilon&#39;_t)\)</span></p>
+<p><span class="math inline">\(\boldsymbol Q^*_t\)</span>为矩阵<span class="math inline">\(\boldsymbol Q_t\)</span>主对角线元素的平方根所组成的对角矩阵</p>
+<p>参数<span class="math inline">\(a,b\)</span>需满足<span class="math inline">\(a\geq 0, b\geq 0, a+b&lt;1\)</span></p>
+<p>详细证明，估计参数过程可参考<span class="citation"><sup>[<a href="#ref-orskaug2009" role="doc-biblioref">1</a>]</sup></span></p>
+<pre class="r"><code>library(rmgarch)
+garch1 &lt;- ugarchspec(mean.model = list(include.mean = F), 
+                     variance.model = list(model = &quot;fGARCH&quot;,submodel = &quot;TGARCH&quot;),
+                     distribution.model = &quot;norm&quot;)
+
+garch2 &lt;- ugarchspec(mean.model = list(include.mean = F), 
+                     variance.model = list(model = &quot;sGARCH&quot;, garchOrder = c(1,1)),
+                     distribution.model = &quot;norm&quot;)
+
+dccgarch1 &lt;- dccspec(uspec = multispec(c(garch1, garch1)),
+                    dccOrder = c(1,1),
+                    distribution = &quot;mvnorm&quot;)
+
+dccgarch2 &lt;- dccspec(uspec = multispec(c(garch2, garch2)),
+                     dccOrder = c(1,1),
+                     distribution = &quot;mvnorm&quot;)
+
+dcc.fit1 &lt;- dccfit(dccgarch1, data = residuals(var1))
+dcc.fit2 &lt;- dccfit(dccgarch2, data = residuals(var2))</code></pre>
+<div id="refs" class="references csl-bib-body">
+<div id="ref-orskaug2009" class="csl-entry">
+<div class="csl-left-margin">[1] </div><div class="csl-right-inline">Orskaug E. Multivariate <span>DCC</span>-<span>GARCH Model</span>[D]. The Norwegian University of Science; Technology, 2009.</div>
+</div>
+</div>
+</div>

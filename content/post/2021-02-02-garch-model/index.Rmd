@@ -3,8 +3,109 @@ title: GARCH model
 author: gale
 date: '2021-02-02'
 slug: []
-categories: []
-tags: []
-meta_img: images/image.png
-description: Description for the page
+categories: 
+    - R
+tags: 
+    - model
+    - GARCH
+bibliography: paper.bib
+csl: chinese-gb7714-2005-numeric.csl
 ---
+
+GARCH族模型介绍
+
+<!--more-->
+
+# 普通GARCH模型
+
+对于对数收益率序列$r_t$，令$a_t=r_t-\mu_t$为$t$时刻的新息，若$a_t$满足
+
+$$
+\begin{aligned}
+  a_t&=\sigma_t\varepsilon_t\\
+  \sigma^2_t&=a_0+\sum^m_{i=1}\alpha_ia^2_{t-i}+\sum^s_{j=1}\beta_j\sigma^2_{t-j}
+\end{aligned}
+$$
+
+且$\varepsilon_t$均值为0，方差为1，独立同分布，$\alpha_0>0, \alpha_i\geq 0, \beta_i\geq 0, \sum^{\max(m,s)}_{i=1}(\alpha_i+\beta_i)<1$，则称$a_t$服从GARCH(m,s)模型
+
+# 门限GARCH模型
+
+常用来处理杠杆效应的TGARCH模型
+
+$$
+\sigma_t^2 = \alpha_0 + \sum_{i=1}^m (\alpha_i + \gamma_i N_{t-i}) a_{t-i}^2+ \sum_{j=1}^s \beta_j \sigma_{t-j}^2
+$$
+
+其中，$\alpha_i,\beta_i,\gamma_i$非负，当$a_{t-i}\geq 0$时，$N_{t-1}=0$，否则为1
+
+正负不同的$a_{t-i}$对$\sigma_t^2$的影响不同，负值影响更大
+
+# ARCH-LM检验
+
+该检验等价于检验如下线性回归中的F统计量
+$$a_t^2=\alpha_0+\alpha_1a_{t-1}^2+\cdots+\alpha_ma_{t-m}^2+e_t, t=m+1,\cdots,T$$
+原假设
+$\alpha_1=\alpha_2=\cdots=\alpha_m=0$，即不存在ARCH效应
+
+```{r eval=FALSE}
+FinTS::ArchTest(residuals(var1)[,1], lags = 10)
+```
+
+```{r eval=FALSE}
+arch.test(var2, lags.multi = 10)
+```
+
+# DCC-GARCH(1, 1)模型
+
+将GARCH模型用矩阵形式表示
+$$
+\begin{aligned}
+  \boldsymbol r_t&=\boldsymbol \mu_t+\boldsymbol a_t\\
+  \boldsymbol a_t&=\boldsymbol H_t^{1/2}\boldsymbol z_t
+\end{aligned}
+$$
+其中，
+$\boldsymbol H_t$可分解为
+$\boldsymbol H_t=\boldsymbol D_t\boldsymbol R_t\boldsymbol D_t$
+
+$\boldsymbol D_t=diag(\sqrt{h_{1t}},\sqrt{h_{2t}},\cdots,\sqrt{h_{nt}})$
+
+$\boldsymbol R_t$为相关系数矩阵
+
+$$
+\begin{aligned}
+  \boldsymbol R_t&=\boldsymbol Q^{*-1}_t\boldsymbol Q_t\boldsymbol Q^{*-1}_t\\
+  \boldsymbol Q_t&=(1-a-b)\bar{\boldsymbol Q}+a\boldsymbol \varepsilon_{t-1}\boldsymbol \varepsilon'_{t-1}+b\boldsymbol Q_{t-1}
+\end{aligned}
+$$
+其中，
+$\bar{\boldsymbol Q}=E(\boldsymbol \varepsilon_t\boldsymbol \varepsilon'_t)$
+
+$\boldsymbol Q^*_t$为矩阵$\boldsymbol Q_t$主对角线元素的平方根所组成的对角矩阵
+
+参数$a,b$需满足$a\geq 0, b\geq 0, a+b<1$
+
+详细证明，估计参数过程可参考[@orskaug2009]
+
+```{r eval=FALSE}
+library(rmgarch)
+garch1 <- ugarchspec(mean.model = list(include.mean = F), 
+                     variance.model = list(model = "fGARCH",submodel = "TGARCH"),
+                     distribution.model = "norm")
+
+garch2 <- ugarchspec(mean.model = list(include.mean = F), 
+                     variance.model = list(model = "sGARCH", garchOrder = c(1,1)),
+                     distribution.model = "norm")
+
+dccgarch1 <- dccspec(uspec = multispec(c(garch1, garch1)),
+                    dccOrder = c(1,1),
+                    distribution = "mvnorm")
+
+dccgarch2 <- dccspec(uspec = multispec(c(garch2, garch2)),
+                     dccOrder = c(1,1),
+                     distribution = "mvnorm")
+
+dcc.fit1 <- dccfit(dccgarch1, data = residuals(var1))
+dcc.fit2 <- dccfit(dccgarch2, data = residuals(var2))
+```

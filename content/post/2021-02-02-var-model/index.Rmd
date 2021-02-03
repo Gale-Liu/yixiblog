@@ -3,8 +3,10 @@ title: var model
 author: gale
 date: '2021-02-02'
 slug: []
-categories: []
+categories: 
+  - R
 tags:
+  - model
   - var
 lastmod: '2021-02-02T15:38:49+08:00'
 keywords: []
