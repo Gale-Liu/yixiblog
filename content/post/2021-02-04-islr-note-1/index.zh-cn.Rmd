@@ -1,0 +1,97 @@
+---
+title: ISLR Note 1
+author: gale
+date: '2021-02-04'
+slug: []
+categories:
+  - R
+tags:
+  - note
+lastmod: '2021-02-04T20:13:00+08:00'
+keywords: []
+description: ''
+comment: no
+toc: yes
+autoCollapseToc: yes
+postMetaInFooter: no
+hiddenFromHomePage: no
+contentCopyright: no
+reward: no
+mathjax: yes
+mathjaxEnableSingleDollar: yes
+mathjaxEnableAutoNumber: yes
+hideHeaderAndFooter: no
+flowchartDiagrams:
+  enable: no
+  options: ''
+sequenceDiagrams:
+  enable: no
+  options: ''
+---
+
+ISLR第二章的阅读笔记
+
+<!--more-->
+
+# 什么是统计学习
+
+## 什么情况下需要估计$f$
+
+对于
+
+$$
+Y=f(x)+\varepsilon
+$$
+
+需要估计$f$，主要原因有两个：**预测**和**推断**。
+
+- 预测
+  - 可约误差：$\hat{f}$不准确引起的误差，可降低
+  - 不可约误差：$\varepsilon$引起的误差，不能降低
+  
+- 推断：$X_1,X_2,\cdots,X_p$的变化对$Y$的影响
+
+## 如何估计$f$
+
+- 参数方法
+  - 假定模型形式，估计参数
+  - 通过选择**光滑**模型拟合很多不同形式的$f$，达到好的估计效果
+  - 拟合复杂的模型容易出现**过拟合**，这表示这些模型拟合了错误或躁声
+
+- 非参数方法
+  - 优点：不限定函数$f$的具体形式，可以在更大的范围选择更适宜$f$形状的估计
+  - 缺点：无法将估计$f$的问题简化到仅仅对少数参数进行估计的问题，所以为了获得对$f$更为精准的估计，往往需要大量的观测点(远远超出参数方法所需要的点)
+
+## 预测精度与模型解释性的权衡
+
+- 推断时，倾向选择欠光滑的模型，如线性模型
+- 预测时，也不是光滑度越高的模型效果一定越好，可能出现过拟合
+- 一般来说，一个模型的光滑程度越强，则解释性越弱
+
+## 指导学习与无指导学习
+
+也称**监督学习**和**无监督学习**
+
+- 监督学习：有输入和输出，目的是建立二者之间的关系，如线性回归，支持向量机等
+- 无监督学习：只有输入，没有输出，如聚类分析
+- 半监督学习：有输入，但只有一部分输出
+
+## 回归与分类
+
+- 回归：因变量为定量变量
+- 分类：因变量为定性变量
+
+# 评价模型精度
+
+在统计学中**没有免费的午餐**：没有任何一种方法能在各种数据集里完胜其他所有的方法。
+
+## 拟合效果检验
+
+均方误差(MSE)
+
+$$
+MSE=\frac{1}{N}\sum_{i=1}^n(y_i-\hat{f}(x_i))^2
+$$
+
+
+
